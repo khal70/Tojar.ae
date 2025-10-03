@@ -1,0 +1,58 @@
+"use client"
+
+import AdminLayout from "@/components/ui/AdminLayout"
+import Card from "@/components/ui/Card"
+
+const promoCodes = [
+  { code: "WELCOME10", discount: "10%", status: "Active", uses: 124 },
+  { code: "FREESHIP", discount: "Free Shipping", status: "Draft", uses: 48 },
+  { code: "RAMADAN25", discount: "25%", status: "Expired", uses: 310 }
+]
+
+export default function PromoCodesPage() {
+  return (
+    <AdminLayout>
+      <div className="space-y-6">
+        <header>
+          <h1 className="text-3xl font-semibold mb-2">Promotion Codes</h1>
+          <p className="text-gray-600 text-sm">Track and manage discount codes available to shoppers.</p>
+        </header>
+
+        <Card>
+          <table className="w-full text-left text-sm">
+            <thead className="text-xs uppercase tracking-wide text-gray-500">
+              <tr>
+                <th className="py-2">Code</th>
+                <th className="py-2">Discount</th>
+                <th className="py-2">Status</th>
+                <th className="py-2">Total Uses</th>
+              </tr>
+            </thead>
+            <tbody>
+              {promoCodes.map((promo) => (
+                <tr key={promo.code} className="border-t border-gray-200">
+                  <td className="py-3 font-medium text-gray-800">{promo.code}</td>
+                  <td className="py-3">{promo.discount}</td>
+                  <td className="py-3">
+                    <span
+                      className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                        promo.status === "Active"
+                          ? "bg-green-100 text-green-700"
+                          : promo.status === "Draft"
+                          ? "bg-yellow-100 text-yellow-700"
+                          : "bg-gray-200 text-gray-600"
+                      }`}
+                    >
+                      {promo.status}
+                    </span>
+                  </td>
+                  <td className="py-3">{promo.uses}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </Card>
+      </div>
+    </AdminLayout>
+  )
+}

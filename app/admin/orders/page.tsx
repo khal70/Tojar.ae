@@ -1,10 +1,11 @@
 'use client'
+import Link from 'next/link'
 import AdminLayout from '@/components/ui/AdminLayout'
 import Card from '@/components/ui/Card'
 
 export default function OrdersPage() {
   const orders = [
-    { id: 101, user: 'user@example.com', total: 128.00, status: 'paid' },
+    { id: 101, user: 'user@example.com', total: 128.0, status: 'paid' },
     { id: 102, user: 'guest@example.com', total: 49.99, status: 'pending' }
   ]
 
@@ -19,6 +20,7 @@ export default function OrdersPage() {
               <th>User</th>
               <th>Total</th>
               <th>Status</th>
+              <th></th>
             </tr>
           </thead>
           <tbody>
@@ -26,8 +28,13 @@ export default function OrdersPage() {
               <tr key={o.id}>
                 <td className="py-2">{o.id}</td>
                 <td>{o.user}</td>
-                <td>${o.total}</td>
+                <td>${o.total.toFixed(2)}</td>
                 <td>{o.status}</td>
+                <td>
+                  <Link className="text-sm text-blue-600 hover:underline" href="/admin/orders/detail">
+                    View
+                  </Link>
+                </td>
               </tr>
             ))}
           </tbody>
