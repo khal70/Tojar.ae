@@ -1,37 +1,10 @@
 import AdminLayout from "@/components/ui/AdminLayout"
-import Card from "@/components/ui/Card"
-
-const banners = [
-  { id: 1, title: "Summer Sale", status: "Active" },
-  { id: 2, title: "New Arrivals", status: "Scheduled" }
-]
+import BannersView from "@/components/admin/BannersView"
 
 export default function BannersPage() {
   return (
     <AdminLayout>
-      <header className="space-y-1">
-        <h1 className="text-3xl font-semibold">Banners</h1>
-        <p className="text-sm text-gray-600">Manage hero banners currently live on the storefront.</p>
-      </header>
-
-      <Card>
-        <table className="w-full text-left text-sm">
-          <thead className="text-xs uppercase tracking-wide text-gray-500">
-            <tr>
-              <th scope="col" className="py-2">Title</th>
-              <th scope="col" className="py-2">Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {banners.map((banner) => (
-              <tr key={banner.id} className="border-t border-gray-200">
-                <td className="py-3 font-medium text-gray-800">{banner.title}</td>
-                <td className="py-3">{banner.status}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </Card>
+      <BannersView />
     </AdminLayout>
   )
 }
