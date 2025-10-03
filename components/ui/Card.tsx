@@ -1,15 +1,14 @@
-'use client'
-import React from 'react'
+import type { ReactNode } from "react"
 
-type CardProps = {
-  children: React.ReactNode
+export type CardProps = {
+  children: ReactNode
   className?: string
 }
 
-export default function Card({ children, className = '' }: CardProps) {
-  return (
-    <div className={`bg-white shadow p-4 rounded ${className}`}>
-      {children}
-    </div>
-  )
+export default function Card({ children, className }: CardProps) {
+  const classes = ["rounded-lg border border-gray-200 bg-white p-6 shadow-sm", className]
+    .filter(Boolean)
+    .join(" ")
+
+  return <section className={classes}>{children}</section>
 }
