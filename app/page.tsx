@@ -1,21 +1,22 @@
-'use client'
-import { useEffect, useState } from 'react'
-import StoreLayout from '@/components/ui/StoreLayout'
-import { supabase } from '@/lib/supabase'
-import Link from 'next/link'
+﻿'use client'
+import { useEffect, useState } from "react"
+import StoreLayout from "@/components/ui/StoreLayout"
+import Link from "next/link"
 
 export default function HomePage() {
   const [categories, setCategories] = useState<any[]>([])
   const [products, setProducts] = useState<any[]>([])
 
   useEffect(() => {
-    const fetchData = async () => {
-      const { data: catData } = await supabase.from('categories').select('*')
-      const { data: prodData } = await supabase.from('products').select('*').limit(4)
-      if (catData) setCategories(catData)
-      if (prodData) setProducts(prodData)
-    }
-    fetchData()
+    // Mock data for local testing
+    setCategories([
+      { id: 1, name: "Clothing" },
+      { id: 2, name: "Electronics" }
+    ])
+    setProducts([
+      { id: 1, name: "Sample Product 1", price: 29.99, image: "/images/sample.png" },
+      { id: 2, name: "Sample Product 2", price: 49.99, image: "/images/sample.png" }
+    ])
   }, [])
 
   return (

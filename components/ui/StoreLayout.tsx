@@ -1,11 +1,11 @@
-'use client'
-import Link from 'next/link'
-import Image from 'next/image'
-import Logo from '@/public/images/logo-green.png' // Assume we store it here
+﻿'use client'
+import Link from "next/link"
+import Image from "next/image"
+import Logo from "@/public/images/logo-green.png"
 
 export default function StoreLayout({ children }: { children: React.ReactNode }) {
   return (
-    <>
+    <div className="min-h-screen flex flex-col">
       <header className="bg-white shadow p-4">
         <div className="max-w-6xl mx-auto flex justify-between items-center">
           <Link href="/" className="flex items-center space-x-2">
@@ -19,7 +19,7 @@ export default function StoreLayout({ children }: { children: React.ReactNode })
           </nav>
         </div>
       </header>
-      <main className="max-w-6xl mx-auto p-4">{children}</main>
-    </>
+      <main className="flex-1 max-w-6xl mx-auto p-4">{children}</main>
+    </div>
   )
 }
