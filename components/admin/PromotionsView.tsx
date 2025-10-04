@@ -1,62 +1,76 @@
-"use client"
-
 import Card from "@/components/ui/Card"
+import { fetchAdminPromotions } from "@/lib/admin-data"
 import { formatCurrency } from "@/lib/formatters"
 
-const metrics = [
-  { label: "Active codes", value: "8", helper: "Across marketplace campaigns" },
-  { label: "Redemption rate", value: "34%", helper: "+6 pts vs last month" },
-  { label: "Revenue influenced", value: formatCurrency(96_400), helper: "Past 30 days" },
-  { label: "Discount cost", value: formatCurrency(12_180), helper: "Past 30 days" }
-]
-
-const promoCodes = [
-  {
-    code: "RAMADAN25",
-    name: "Ramadan generosity",
-    status: "Active",
-    redemptions: 182,
-    discount: "25%",
-    ends: "31 May 2024"
-  },
-  {
-    code: "WELCOME50",
-    name: "New shopper welcome",
-    status: "Scheduled",
-    redemptions: 0,
-    discount: formatCurrency(50),
-    ends: "1 Jun 2024"
-  },
-  {
-    code: "EIDDELIGHTS",
-    name: "Eid bundles",
-    status: "Draft",
-    redemptions: 0,
-    discount: "Buy 2 get 1",
-    ends: "—"
-  }
-]
-
-const automation = [
-  {
-    title: "Loyalty tier upsell",
-    detail: "Automatically send 15% code to Gold members when cart exceeds AED 500.",
-    status: "Enabled"
-  },
-  {
-    title: "Abandoned cart recovery",
-    detail: "Trigger AED 25 coupon after 12 hours of inactivity.",
-    status: "Monitoring"
-  }
-]
-
 const statusStyles: Record<string, string> = {
-  Active: "bg-emerald-100 text-emerald-700",
-  Scheduled: "bg-blue-100 text-blue-700",
-  Draft: "bg-gray-200 text-gray-600"
+  active: "bg-emerald-100 text-emerald-700",
+  scheduled: "bg-blue-100 text-blue-700",
+  draft: "bg-gray-200 text-gray-600",
+  inactive: "bg-gray-200 text-gray-600",
 }
 
-export default function PromotionsView() {
+function normaliseStatus(status: string) {
+  return status.toLowerCase()
+}
+
+function formatDate(value: string | null) {
+  if (!value) return "—"
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return "—"
+  return new Intl.DateTimeFormat("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  }).format(date)
+}
+
+function formatDiscount(percent: number | null, amount: number | null) {
+  if (percent !== null) {
+    return `${percent}%`
+  }
+  if (amount !== null) {
+    return formatCurrency(amount)
+  }
+  return "—"
+}
+
+export default async function PromotionsView() {
+  const promotions = await fetchAdminPromotions()
+  const activePromotions = promotions.filter((promo) => normaliseStatus(promo.status).includes("active"))
+  const totalRedemptions = promotions.reduce((sum, promo) => sum + (promo.redemptions ?? 0), 0)
+  const upcomingExpiries = promotions.filter((promo) => {
+    if (!promo.endsAt) return false
+    const expiry = new Date(promo.endsAt)
+    if (Number.isNaN(expiry.getTime())) return false
+    const now = new Date()
+    const diff = expiry.getTime() - now.getTime()
+    const sevenDays = 1000 * 60 * 60 * 24 * 7
+    return diff >= 0 && diff <= sevenDays
+  }).length
+
+  const metrics = [
+    {
+      label: "Active codes",
+      value: activePromotions.length.toLocaleString(),
+      helper: "Currently live promotions",
+    },
+    {
+      label: "Total campaigns",
+      value: promotions.length.toLocaleString(),
+      helper: "Fetched from Supabase",
+    },
+    {
+      label: "Redemptions",
+      value: totalRedemptions.toLocaleString(),
+      helper: "Sum of redemption counts",
+    },
+    {
+      label: "Expiring soon",
+      value: upcomingExpiries.toLocaleString(),
+      helper: "Within the next 7 days",
+    },
+  ]
+
   return (
     <section className="space-y-6">
       <header className="space-y-1">
@@ -81,76 +95,52 @@ export default function PromotionsView() {
           <h2 className="text-lg font-semibold text-gray-900">Campaign performance</h2>
           <p className="text-sm text-gray-600">High performing codes and their current lifecycle stage.</p>
         </header>
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200 text-left text-sm">
-            <thead className="text-xs uppercase tracking-wide text-gray-500">
-              <tr>
-                <th scope="col" className="py-3 pr-4">Code</th>
-                <th scope="col" className="py-3 pr-4">Campaign</th>
-                <th scope="col" className="py-3 pr-4">Discount</th>
-                <th scope="col" className="py-3 pr-4">Redemptions</th>
-                <th scope="col" className="py-3">Status</th>
-                <th scope="col" className="py-3">Ends</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {promoCodes.map((promo) => (
-                <tr key={promo.code}>
-                  <td className="whitespace-nowrap py-3 pr-4 font-medium text-gray-900">{promo.code}</td>
-                  <td className="whitespace-nowrap py-3 pr-4 text-gray-700">{promo.name}</td>
-                  <td className="whitespace-nowrap py-3 pr-4 text-gray-600">{promo.discount}</td>
-                  <td className="whitespace-nowrap py-3 pr-4 text-gray-600">{promo.redemptions}</td>
-                  <td className="whitespace-nowrap py-3 pr-4">
-                    <span
-                      className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${
-                        statusStyles[promo.status] ?? "bg-gray-100 text-gray-600"
-                      }`}
-                    >
-                      {promo.status}
-                    </span>
-                  </td>
-                  <td className="whitespace-nowrap py-3 text-gray-500">{promo.ends}</td>
+        {promotions.length > 0 ? (
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200 text-left text-sm">
+              <thead className="text-xs uppercase tracking-wide text-gray-500">
+                <tr>
+                  <th scope="col" className="py-3 pr-4">Code</th>
+                  <th scope="col" className="py-3 pr-4">Campaign</th>
+                  <th scope="col" className="py-3 pr-4">Discount</th>
+                  <th scope="col" className="py-3 pr-4">Redemptions</th>
+                  <th scope="col" className="py-3 pr-4">Status</th>
+                  <th scope="col" className="py-3">Ends</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {promotions.map((promo) => {
+                  const statusKey = normaliseStatus(promo.status)
+                  return (
+                    <tr key={promo.id}>
+                      <td className="whitespace-nowrap py-3 pr-4 font-medium text-gray-900">{promo.code}</td>
+                      <td className="whitespace-nowrap py-3 pr-4 text-gray-700">{promo.name}</td>
+                      <td className="whitespace-nowrap py-3 pr-4 text-gray-600">
+                        {formatDiscount(promo.discountPercent, promo.discountAmount)}
+                      </td>
+                      <td className="whitespace-nowrap py-3 pr-4 text-gray-600">{promo.redemptions ?? "—"}</td>
+                      <td className="whitespace-nowrap py-3 pr-4">
+                        <span
+                          className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${
+                            statusStyles[statusKey] ?? statusStyles.inactive
+                          }`}
+                        >
+                          {promo.status}
+                        </span>
+                      </td>
+                      <td className="whitespace-nowrap py-3 text-gray-500">{formatDate(promo.endsAt)}</td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <p className="rounded-md border border-dashed border-gray-200 bg-gray-50 px-4 py-6 text-center text-sm text-gray-600">
+            No promotion codes found. Seed the Supabase <code className="font-mono">promotions</code> table to view campaigns.
+          </p>
+        )}
       </Card>
-
-      <div className="grid gap-6 lg:grid-cols-3">
-        <Card className="space-y-4 lg:col-span-2">
-          <h2 className="text-lg font-semibold text-gray-900">Automation playbooks</h2>
-          <ul className="space-y-3 text-sm text-gray-700">
-            {automation.map((rule) => (
-              <li key={rule.title} className="rounded-md border border-gray-200 px-4 py-3">
-                <div className="flex items-center justify-between">
-                  <p className="font-medium text-gray-900">{rule.title}</p>
-                  <span className="text-xs uppercase tracking-wide text-emerald-600">{rule.status}</span>
-                </div>
-                <p className="mt-1 text-xs text-gray-500">{rule.detail}</p>
-              </li>
-            ))}
-          </ul>
-        </Card>
-
-        <Card className="space-y-4">
-          <h2 className="text-lg font-semibold text-gray-900">Budget snapshot</h2>
-          <dl className="space-y-3 text-sm text-gray-700">
-            <div className="flex items-center justify-between">
-              <dt className="font-medium text-gray-900">Remaining budget</dt>
-              <dd>{formatCurrency(18_400)}</dd>
-            </div>
-            <div className="flex items-center justify-between">
-              <dt className="font-medium text-gray-900">Spend this month</dt>
-              <dd>{formatCurrency(12_180)}</dd>
-            </div>
-            <div className="flex items-center justify-between">
-              <dt className="font-medium text-gray-900">Average discount per order</dt>
-              <dd>{formatCurrency(18)}</dd>
-            </div>
-          </dl>
-        </Card>
-      </div>
     </section>
   )
 }
