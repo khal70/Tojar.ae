@@ -8,7 +8,7 @@ export function getStripeClient(): Stripe | null {
     return stripeClient
   }
 
-  const secretKey = process.env.STRIPE_SECRET_KEY
+  const secretKey = process.env.STRIPE_SECRET_KEY?.trim()
 
   if (!secretKey) {
     if (process.env.NODE_ENV !== "production") {
@@ -35,7 +35,7 @@ export function getStripeWebhookSecret(): string | null {
     return cachedWebhookSecret
   }
 
-  const secret = process.env.STRIPE_WEBHOOK_SECRET ?? null
+  const secret = process.env.STRIPE_WEBHOOK_SECRET?.trim() ?? null
 
   if (!secret && process.env.NODE_ENV !== "production") {
     console.warn(

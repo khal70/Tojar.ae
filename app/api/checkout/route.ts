@@ -1,6 +1,13 @@
+import { randomUUID } from "node:crypto"
+
 import { NextResponse } from "next/server"
 
 import { getStripeClient } from "@/lib/stripe"
+import {
+  calculateCartTotal,
+  countCartQuantity,
+  normaliseCartItems,
+} from "@/lib/checkout"
 
 export async function POST(req: Request) {
   const stripe = getStripeClient()
@@ -12,31 +19,28 @@ export async function POST(req: Request) {
     )
   }
 
-  const body = await req.json()
-  const { cartItems } = body
+  const payload = await req.json().catch(() => ({ cartItems: [] }))
+  const cartItems = normaliseCartItems(payload?.cartItems)
 
-  if (!Array.isArray(cartItems) || cartItems.length === 0) {
+  if (cartItems.length === 0) {
     return NextResponse.json({ error: "Cart is empty." }, { status: 400 })
   }
 
-  const lineItems = cartItems.map((item: any) => {
-    const quantity = Number(item?.quantity ?? 1)
-    const price = Number(item?.price ?? 0)
-    const name = typeof item?.name === "string" ? item.name : "Item"
-
-    return {
-      price_data: {
-        currency: "usd",
-        product_data: {
-          name,
-        },
-        unit_amount: Math.round(Math.max(price, 0) * 100),
+  const lineItems = cartItems.map((item) => ({
+    price_data: {
+      currency: "usd",
+      product_data: {
+        name: item.name,
       },
-      quantity: Number.isFinite(quantity) && quantity > 0 ? quantity : 1,
-    }
-  })
+      unit_amount: item.unitAmount,
+    },
+    quantity: item.quantity,
+  }))
 
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000"
+  const orderId = randomUUID()
+  const cartTotalCents = calculateCartTotal(cartItems)
+  const cartQuantity = countCartQuantity(cartItems)
 
   try {
     const session = await stripe.checkout.sessions.create({
@@ -46,9 +50,18 @@ export async function POST(req: Request) {
       success_url: `${baseUrl}/orders`,
       cancel_url: `${baseUrl}/cart`,
       metadata: {
-        orderId: "placeholder",
+        orderId,
+        cartTotalCents: String(cartTotalCents),
+        cartQuantity: String(cartQuantity),
       },
     })
+
+    if (typeof session.url !== "string") {
+      return NextResponse.json(
+        { error: "Unable to start checkout. Please try again." },
+        { status: 500 }
+      )
+    }
 
     return NextResponse.json({ url: session.url })
   } catch (error) {
