@@ -1,4 +1,3 @@
-import AdminLayout from "@/components/ui/AdminLayout"
 import Card from "@/components/ui/Card"
 import { formatCurrency } from "@/lib/formatters"
 
@@ -10,7 +9,7 @@ const metrics = [
 
 export default function DashboardPage() {
   return (
-    <AdminLayout>
+    <>
       <header className="space-y-1">
         <h1 className="text-3xl font-semibold">Admin Dashboard</h1>
         <p className="text-sm text-gray-600">High-level overview of performance across the marketplace.</p>
@@ -24,6 +23,6 @@ export default function DashboardPage() {
           </Card>
         ))}
       </div>
-    </AdminLayout>
+    </>
   )
 }

@@ -1,6 +1,6 @@
-'use client'
-import AdminLayout from '@/components/ui/AdminLayout'
-import Card from '@/components/ui/Card'
+"use client"
+
+import Card from "@/components/ui/Card"
 
 export default function ProductsPage() {
   const products = [
@@ -9,7 +9,7 @@ export default function ProductsPage() {
   ]
 
   return (
-    <AdminLayout>
+    <>
       <h1 className="text-2xl font-bold mb-6">Manage Products</h1>
       <Card>
         <table className="w-full text-left">
@@ -31,6 +31,6 @@ export default function ProductsPage() {
           </tbody>
         </table>
       </Card>
-    </AdminLayout>
+    </>
   )
 }

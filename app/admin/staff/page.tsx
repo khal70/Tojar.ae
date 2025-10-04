@@ -1,4 +1,3 @@
-import AdminLayout from "@/components/ui/AdminLayout"
 import Card from "@/components/ui/Card"
 
 const staff = [
@@ -8,7 +7,7 @@ const staff = [
 
 export default function StaffPage() {
   return (
-    <AdminLayout>
+    <>
       <header className="space-y-1">
         <h1 className="text-3xl font-semibold">Staff Users</h1>
         <p className="text-sm text-gray-600">Manage team access and monitor recent activity.</p>
@@ -34,6 +33,6 @@ export default function StaffPage() {
           </tbody>
         </table>
       </Card>
-    </AdminLayout>
+    </>
   )
 }

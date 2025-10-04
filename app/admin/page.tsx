@@ -1,6 +1,5 @@
 import Link from "next/link"
 
-import AdminLayout from "@/components/ui/AdminLayout"
 import Card from "@/components/ui/Card"
 
 const quickLinks = [
@@ -15,7 +14,7 @@ const quickLinks = [
 
 export default function AdminDashboard() {
   return (
-    <AdminLayout>
+    <>
       <header className="space-y-1">
         <h1 className="text-3xl font-semibold">Welcome to Tojar Admin</h1>
         <p className="text-sm text-gray-600">Quick links to frequently accessed areas of the control panel.</p>
@@ -35,6 +34,6 @@ export default function AdminDashboard() {
           ))}
         </ul>
       </Card>
-    </AdminLayout>
+    </>
   )
 }
