@@ -23,16 +23,21 @@ async function requireAdminSession(): Promise<User> {
     redirect(loginRedirect)
   }
 
-  const { data, error } = await supabase.auth.getUser(accessToken)
+  try {
+    const { data, error } = await supabase.auth.getUser(accessToken)
 
-  if (error || !data?.user) {
-    if (error) {
-      console.warn("Failed to validate Supabase access token", error.message)
+    if (error || !data?.user) {
+      if (error) {
+        console.warn("Failed to validate Supabase access token", error.message)
+      }
+      redirect(loginRedirect)
     }
+
+    return data.user
+  } catch (error) {
+    console.error("Unexpected error while validating Supabase access token", error)
     redirect(loginRedirect)
   }
-
-  return data.user
 }
 
 export const metadata: Metadata = {

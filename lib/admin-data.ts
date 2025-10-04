@@ -50,6 +50,36 @@ export type AdminFaq = {
   answer: string
 }
 
+const reportedSupabaseErrors = new Set<string>()
+
+function toErrorMessage(error: unknown) {
+  if (error instanceof Error) {
+    return error.message
+  }
+
+  if (typeof error === "string") {
+    return error
+  }
+
+  try {
+    return JSON.stringify(error)
+  } catch {
+    return String(error)
+  }
+}
+
+function reportSupabaseError(domain: string, error: unknown) {
+  const message = toErrorMessage(error)
+  const key = `${domain}:${message}`
+
+  if (reportedSupabaseErrors.has(key)) {
+    return
+  }
+
+  reportedSupabaseErrors.add(key)
+  console.error(`Failed to load ${domain} from Supabase`, message)
+}
+
 function getSupabaseClient() {
   return getSupabaseServerClient()
 }
@@ -97,20 +127,25 @@ async function fetchOrderRows() {
     return [] as any[]
   }
 
-  const { data, error } = await client
-    .from("orders")
-    .select(
-      "id, user_email, customer_email, customer_name, total, status, payment_method, created_at"
-    )
-    .order("created_at", { ascending: false })
-    .limit(50)
+  try {
+    const { data, error } = await client
+      .from("orders")
+      .select(
+        "id, user_email, customer_email, customer_name, total, status, payment_method, created_at"
+      )
+      .order("created_at", { ascending: false })
+      .limit(50)
 
-  if (error) {
-    console.error("Failed to load orders from Supabase", error.message)
+    if (error) {
+      reportSupabaseError("orders", error)
+      return [] as any[]
+    }
+
+    return data ?? []
+  } catch (error) {
+    reportSupabaseError("orders", error)
     return [] as any[]
   }
-
-  return data ?? []
 }
 
 export async function fetchAdminOrders(): Promise<AdminOrder[]> {
@@ -138,35 +173,43 @@ export async function fetchAdminCustomers(): Promise<AdminCustomer[]> {
     return []
   }
 
-  const { data, error } = await client
-    .from("customers")
-    .select("id, name, full_name, email, orders_count, lifetime_value, total_spent, last_order_at")
-    .order("last_order_at", { ascending: false })
-    .limit(100)
+  try {
+    const { data, error } = await client
+      .from("customers")
+      .select("id, name, full_name, email, orders_count, lifetime_value, total_spent, last_order_at")
+      .order("last_order_at", { ascending: false })
+      .limit(100)
 
-  if (!error && data) {
-    return data.map((row) => {
-      const record = row as Record<string, unknown>
-      const ordersCount =
-        parseNumber(record["orders_count"]) ?? parseNumber(record["total_orders"]) ?? 0
-      const lifetimeValue =
-        parseNumber(record["lifetime_value"]) ?? parseNumber(record["total_spent"]) ?? 0
+    if (!error && data) {
+      return data.map((row) => {
+        const record = row as Record<string, unknown>
+        const ordersCount =
+          parseNumber(record["orders_count"]) ?? parseNumber(record["total_orders"]) ?? 0
+        const lifetimeValue =
+          parseNumber(record["lifetime_value"]) ?? parseNumber(record["total_spent"]) ?? 0
 
-      return {
-        id: ensureString(record["id"], ensureString(record["email"], "—")),
-        name: ensureString(
-          record["name"] || record["full_name"] || record["email"],
-          "Unknown customer"
-        ),
-        email: ensureString(record["email"], "—"),
-        ordersCount: ordersCount ?? 0,
-        lifetimeValue: lifetimeValue ?? 0,
-        lastOrderAt:
-          typeof record["last_order_at"] === "string" && record["last_order_at"].length > 0
-            ? (record["last_order_at"] as string)
-            : null,
-      }
-    })
+        return {
+          id: ensureString(record["id"], ensureString(record["email"], "—")),
+          name: ensureString(
+            record["name"] || record["full_name"] || record["email"],
+            "Unknown customer"
+          ),
+          email: ensureString(record["email"], "—"),
+          ordersCount: ordersCount ?? 0,
+          lifetimeValue: lifetimeValue ?? 0,
+          lastOrderAt:
+            typeof record["last_order_at"] === "string" && record["last_order_at"].length > 0
+              ? (record["last_order_at"] as string)
+              : null,
+        }
+      })
+    }
+
+    if (error) {
+      reportSupabaseError("customers", error)
+    }
+  } catch (error) {
+    reportSupabaseError("customers", error)
   }
 
   // Fallback by aggregating orders table if customers table is unavailable
@@ -216,37 +259,42 @@ export async function fetchAdminPromotions(): Promise<AdminPromotion[]> {
     return []
   }
 
-  const { data, error } = await client
-    .from("promotions")
-    .select(
-      "id, code, name, title, discount, discount_percent, discount_amount, active, status, redemptions, ends_at, expiry_date"
-    )
-    .order("ends_at", { ascending: false })
+  try {
+    const { data, error } = await client
+      .from("promotions")
+      .select(
+        "id, code, name, title, discount, discount_percent, discount_amount, active, status, redemptions, ends_at, expiry_date"
+      )
+      .order("ends_at", { ascending: false })
 
-  if (error) {
-    console.error("Failed to load promotions from Supabase", error.message)
+    if (error) {
+      reportSupabaseError("promotions", error)
+      return []
+    }
+
+    return (data ?? []).map((row) => {
+      const discountPercent = parseNumber(row.discount_percent)
+      const discountAmount =
+        parseNumber(row.discount_amount) ?? (discountPercent === null ? parseNumber(row.discount) : null)
+
+      const code = ensureString(row.code, ensureString(row.name || row.title, "—"))
+      const name = ensureString(row.name || row.title || row.code, "Untitled promotion")
+
+      return {
+        id: ensureString(row.id, code),
+        code,
+        name,
+        discountPercent,
+        discountAmount,
+        redemptions: parseNumber(row.redemptions),
+        status: ensureString(row.status, row.active === false ? "Inactive" : "Active"),
+        endsAt: optionalString(row.ends_at || row.expiry_date),
+      }
+    })
+  } catch (error) {
+    reportSupabaseError("promotions", error)
     return []
   }
-
-  return (data ?? []).map((row) => {
-    const discountPercent = parseNumber(row.discount_percent)
-    const discountAmount =
-      parseNumber(row.discount_amount) ?? (discountPercent === null ? parseNumber(row.discount) : null)
-
-    const code = ensureString(row.code, ensureString(row.name || row.title, "—"))
-    const name = ensureString(row.name || row.title || row.code, "Untitled promotion")
-
-    return {
-      id: ensureString(row.id, code),
-      code,
-      name,
-      discountPercent,
-      discountAmount,
-      redemptions: parseNumber(row.redemptions),
-      status: ensureString(row.status, row.active === false ? "Inactive" : "Active"),
-      endsAt: optionalString(row.ends_at || row.expiry_date),
-    }
-  })
 }
 
 export async function fetchAdminBanners(): Promise<AdminBanner[]> {
@@ -255,23 +303,28 @@ export async function fetchAdminBanners(): Promise<AdminBanner[]> {
     return []
   }
 
-  const { data, error } = await client
-    .from("banners")
-    .select("id, title, name, placement, position, active, status, updated_at, created_at")
-    .order("updated_at", { ascending: false })
+  try {
+    const { data, error } = await client
+      .from("banners")
+      .select("id, title, name, placement, position, active, status, updated_at, created_at")
+      .order("updated_at", { ascending: false })
 
-  if (error) {
-    console.error("Failed to load banners from Supabase", error.message)
+    if (error) {
+      reportSupabaseError("banners", error)
+      return []
+    }
+
+    return (data ?? []).map((row) => ({
+      id: ensureString(row.id, ensureString(row.title || row.name, "—")),
+      title: ensureString(row.title || row.name, "Untitled banner"),
+      placement: ensureString(row.placement || row.position, "—"),
+      status: ensureString(row.status, row.active === false ? "Inactive" : "Active"),
+      updatedAt: optionalString(row.updated_at || row.created_at),
+    }))
+  } catch (error) {
+    reportSupabaseError("banners", error)
     return []
   }
-
-  return (data ?? []).map((row) => ({
-    id: ensureString(row.id, ensureString(row.title || row.name, "—")),
-    title: ensureString(row.title || row.name, "Untitled banner"),
-    placement: ensureString(row.placement || row.position, "—"),
-    status: ensureString(row.status, row.active === false ? "Inactive" : "Active"),
-    updatedAt: optionalString(row.updated_at || row.created_at),
-  }))
 }
 
 export async function fetchAdminCategories(): Promise<AdminCategory[]> {
@@ -280,25 +333,30 @@ export async function fetchAdminCategories(): Promise<AdminCategory[]> {
     return []
   }
 
-  const { data, error } = await client
-    .from("categories")
-    .select("id, name, title, products_count, product_count, updated_at, created_at")
-    .order("updated_at", { ascending: false })
+  try {
+    const { data, error } = await client
+      .from("categories")
+      .select("id, name, title, products_count, product_count, updated_at, created_at")
+      .order("updated_at", { ascending: false })
 
-  if (error) {
-    console.error("Failed to load categories from Supabase", error.message)
+    if (error) {
+      reportSupabaseError("categories", error)
+      return []
+    }
+
+    return (data ?? []).map((row) => ({
+      id: ensureString(row.id, ensureString(row.name || row.title, "—")),
+      name: ensureString(row.name || row.title, "Untitled category"),
+      productsCount:
+        parseNumber(row.products_count) ??
+        parseNumber(row.product_count) ??
+        null,
+      updatedAt: optionalString(row.updated_at || row.created_at),
+    }))
+  } catch (error) {
+    reportSupabaseError("categories", error)
     return []
   }
-
-  return (data ?? []).map((row) => ({
-    id: ensureString(row.id, ensureString(row.name || row.title, "—")),
-    name: ensureString(row.name || row.title, "Untitled category"),
-    productsCount:
-      parseNumber(row.products_count) ??
-      parseNumber(row.product_count) ??
-      null,
-    updatedAt: optionalString(row.updated_at || row.created_at),
-  }))
 }
 
 export async function fetchAdminFaqs(): Promise<AdminFaq[]> {
@@ -307,16 +365,21 @@ export async function fetchAdminFaqs(): Promise<AdminFaq[]> {
     return []
   }
 
-  const { data, error } = await client.from("faqs").select("id, question, answer").order("id")
+  try {
+    const { data, error } = await client.from("faqs").select("id, question, answer").order("id")
 
-  if (error) {
-    console.error("Failed to load FAQs from Supabase", error.message)
+    if (error) {
+      reportSupabaseError("faqs", error)
+      return []
+    }
+
+    return (data ?? []).map((row) => ({
+      id: ensureString(row.id, "—"),
+      question: ensureString(row.question, "Untitled question"),
+      answer: ensureString(row.answer, "—"),
+    }))
+  } catch (error) {
+    reportSupabaseError("faqs", error)
     return []
   }
-
-  return (data ?? []).map((row) => ({
-    id: ensureString(row.id, "—"),
-    question: ensureString(row.question, "Untitled question"),
-    answer: ensureString(row.answer, "—"),
-  }))
 }

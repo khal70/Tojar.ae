@@ -1,21 +1,48 @@
 import { NextResponse } from "next/server"
-import { createClient } from "@supabase/supabase-js"
+import { createClient, type SupabaseClient } from "@supabase/supabase-js"
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+import { getSupabaseAuthConfig } from "@/lib/supabase-server"
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error("Supabase URL and anon key are required for admin login.")
+let cachedClient: SupabaseClient | null | undefined
+
+function getSupabaseAuthClient(): SupabaseClient | null {
+  if (cachedClient !== undefined) {
+    return cachedClient
+  }
+
+  const config = getSupabaseAuthConfig()
+
+  if (!config) {
+    if (process.env.NODE_ENV !== "production") {
+      console.warn(
+        "Supabase authentication environment variables are missing or still use placeholder values. Admin login is disabled."
+      )
+    }
+
+    cachedClient = null
+    return cachedClient
+  }
+
+  cachedClient = createClient(config.supabaseUrl, config.anonKey, {
+    auth: { persistSession: false },
+  })
+
+  return cachedClient
 }
-
-const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: { persistSession: false }
-})
 
 const ONE_HOUR = 60 * 60
 const THIRTY_DAYS = 60 * 60 * 24 * 30
 
 export async function POST(request: Request) {
+  const supabase = getSupabaseAuthClient()
+
+  if (!supabase) {
+    return NextResponse.json(
+      { error: "Supabase authentication is not configured." },
+      { status: 500 }
+    )
+  }
+
   const { email, password } = await request.json().catch(() => ({ email: null, password: null }))
 
   if (typeof email !== "string" || typeof password !== "string") {
@@ -28,7 +55,7 @@ export async function POST(request: Request) {
   try {
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
-      password
+      password,
     })
 
     if (error || !data.session) {
@@ -46,7 +73,7 @@ export async function POST(request: Request) {
       sameSite: "lax",
       secure,
       path: "/",
-      maxAge: data.session.expires_in ?? ONE_HOUR
+      maxAge: data.session.expires_in ?? ONE_HOUR,
     })
 
     response.cookies.set("sb-refresh-token", data.session.refresh_token, {
@@ -54,7 +81,7 @@ export async function POST(request: Request) {
       sameSite: "lax",
       secure,
       path: "/",
-      maxAge: THIRTY_DAYS
+      maxAge: THIRTY_DAYS,
     })
 
     return response
