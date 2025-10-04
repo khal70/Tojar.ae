@@ -63,6 +63,9 @@ docker-compose up --build
 
 - `npm run dev` — local dev
 - `npm run build` — build app
+- `npm test` — run unit tests (Vitest)
+- `npm run test:unit` — run unit tests directly
+- `npm run test:e2e` — run Playwright end-to-end suite
 - `npm run package:standalone` — collect standalone output after `npm run build`
 - `npm run deploy:standalone` — build + bundle for generic Node hosting
 - `npm run start` — run in prod
@@ -74,13 +77,13 @@ docker-compose up --build
 
 ### Vitest
 ```bash
-npx vitest run
+npm run test:unit
 ```
 
 ### Playwright
 ```bash
 npx playwright install
-npx playwright test
+npm run test:e2e
 ```
 
 ---
