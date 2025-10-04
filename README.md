@@ -20,6 +20,7 @@ A complete, production-ready eCommerce app with admin panel, Stripe checkout, Su
 ---
 
 ## 🚀 Deployment Options
+[Detailed instructions →](docs/deployment-guide.md)
 
 ### Vercel (Recommended)
 1. Push to GitHub
@@ -34,17 +35,22 @@ A complete, production-ready eCommerce app with admin panel, Stripe checkout, Su
    - `SLACK_WEBHOOK_URL`
    - `NEXT_PUBLIC_BASE_URL=https://tojar.ae`
 
-### 🔌 cPanel (Node.js App)
-1. Upload and extract the project
-2. Run:
+### 🔌 cPanel & Shared Hosting (Node.js App)
+1. Deploy with build artifact:
    ```bash
-   bash install.sh
+   npm run deploy:standalone
    ```
+   The standalone bundle is created in `dist/standalone`.
+2. Upload the **contents** of `dist/standalone` to your hosting space (e.g. via File Manager or SFTP).
 3. In cPanel:
-   - Go to **Application Manager**
-   - Create Node.js app at `~/nodeapp/tojar`
-   - Startup file: `.output/server/index.mjs`
-   - Run command: `npm run start`
+   - Open **Application Manager → Create Application**
+   - Set the document root to the uploaded folder
+   - Runtime: Node.js 18+
+   - Startup file: `server.js`
+   - Application URL: `/`
+   - Command: `node server.js`
+4. Add environment variables inside the cPanel app (same as Vercel list above) and restart the app.
+5. Ensure ports are open (default 3000) or configure a reverse proxy as required by your host.
 
 ### 🐳 Docker
 ```bash
@@ -57,6 +63,8 @@ docker-compose up --build
 
 - `npm run dev` — local dev
 - `npm run build` — build app
+- `npm run package:standalone` — collect standalone output after `npm run build`
+- `npm run deploy:standalone` — build + bundle for generic Node hosting
 - `npm run start` — run in prod
 - `node scripts/seed.js` — seed demo data
 
