@@ -2,6 +2,8 @@
 .next/
 out/
 dist/
+.tsbuildinfo
+tsconfig.tsbuildinfo
 .env
 .vercel
 supabase/.temp/

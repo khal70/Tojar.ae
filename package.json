@@ -4,11 +4,15 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "prebuild": "npm run clean:next",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "tsc --noEmit",
     "test": "vitest run",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "clean:next": "node scripts/clean-next.mjs",
+    "package:standalone": "node scripts/create-standalone-package.mjs",
+    "deploy:standalone": "node scripts/deploy-standalone.mjs"
   },
   "dependencies": {
     "@stripe/stripe-js": "^2.3.0",
