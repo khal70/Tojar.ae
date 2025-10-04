@@ -4,11 +4,13 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "prebuild": "npm run clean:next",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
     "test": "vitest run",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "clean:next": "node scripts/clean-next.mjs"
   },
   "dependencies": {
     "@stripe/stripe-js": "^2.3.0",
