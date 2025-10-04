@@ -1,12 +1,12 @@
 import { Suspense } from "react"
 
 import AdminPageSkeleton from "@/components/admin/AdminPageSkeleton"
-import FaqsView from "@/components/admin/FaqsView"
+import PaymentsSettingsView from "@/components/admin/PaymentsSettingsView"
 
-export default function FaqsPage() {
+export default function PaymentSettingsPage() {
   return (
     <Suspense fallback={<AdminPageSkeleton />}>
-      <FaqsView />
+      <PaymentsSettingsView />
     </Suspense>
   )
 }
