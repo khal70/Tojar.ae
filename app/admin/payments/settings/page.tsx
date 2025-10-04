@@ -1,10 +1,10 @@
 import AdminLayout from "@/components/ui/AdminLayout"
-import PaymentsAltView from "@/components/admin/Payments_altView"
+import PaymentsSettingsView from "@/components/admin/PaymentsSettingsView"
 
 export default function PaymentSettingsPage() {
   return (
     <AdminLayout>
-      <PaymentsAltView />
+      <PaymentsSettingsView />
     </AdminLayout>
   )
 }
