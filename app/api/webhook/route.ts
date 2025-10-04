@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { stripe, stripeWebhookSecret } from '@/lib/stripe'
-import { createClient } from '@supabase/supabase-js'
-import { resend } from '@/lib/email'
+import { NextRequest, NextResponse } from "next/server"
+import { stripe, stripeWebhookSecret } from "@/lib/stripe"
+import { createClient } from "@supabase/supabase-js"
+import { resend } from "@/lib/email"
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -9,16 +9,26 @@ const supabase = createClient(
 )
 
 export async function POST(req: NextRequest) {
+  if (!stripeWebhookSecret) {
+    return new NextResponse("Stripe webhook secret is not configured", {
+      status: 500
+    })
+  }
+
   const rawBody = await req.text()
-  const sig = req.headers.get('stripe-signature')
+  const sig = req.headers.get("stripe-signature")
+
+  if (!sig) {
+    return new NextResponse("Missing stripe-signature header", { status: 400 })
+  }
 
   let event
 
   try {
-    event = stripe.webhooks.constructEvent(rawBody, sig!, stripeWebhookSecret)
+    event = stripe.webhooks.constructEvent(rawBody, sig, stripeWebhookSecret)
   } catch (err) {
-    console.error('Webhook error:', err)
-    return new NextResponse('Webhook error', { status: 400 })
+    console.error("Webhook error:", err)
+    return new NextResponse("Webhook error", { status: 400 })
   }
 
   if (event.type === 'checkout.session.completed') {

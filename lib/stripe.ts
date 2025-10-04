@@ -1,12 +1,18 @@
-﻿import Stripe from "stripe"
+import Stripe from "stripe"
 
-// Use dummy keys if environment variables are not set
-const secretKey = process.env.STRIPE_SECRET_KEY || "sk_test_dummy"
-const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET || "whsec_dummy"
+const secretKey = process.env.STRIPE_SECRET_KEY
+const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET
+
+if (!secretKey) {
+  throw new Error("STRIPE_SECRET_KEY must be configured")
+}
+
+if (!webhookSecret) {
+  throw new Error("STRIPE_WEBHOOK_SECRET must be configured")
+}
 
 export const stripe = new Stripe(secretKey, {
-  apiVersion: "2025-09-30.clover",
+  apiVersion: "2025-09-30.clover"
 })
 
-// Webhook secret for validating incoming events
 export const stripeWebhookSecret = webhookSecret
