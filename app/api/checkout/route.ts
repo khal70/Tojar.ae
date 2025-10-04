@@ -30,7 +30,7 @@ export async function POST(req: Request) {
         product_data: {
           name,
         },
-        unit_amount: Math.max(price, 0) * 100,
+        unit_amount: Math.round(Math.max(price, 0) * 100),
       },
       quantity: Number.isFinite(quantity) && quantity > 0 ? quantity : 1,
     }
@@ -38,16 +38,24 @@ export async function POST(req: Request) {
 
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000"
 
-  const session = await stripe.checkout.sessions.create({
-    payment_method_types: ["card"],
-    line_items: lineItems,
-    mode: "payment",
-    success_url: `${baseUrl}/orders`,
-    cancel_url: `${baseUrl}/cart`,
-    metadata: {
-      orderId: "placeholder",
-    },
-  })
+  try {
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ["card"],
+      line_items: lineItems,
+      mode: "payment",
+      success_url: `${baseUrl}/orders`,
+      cancel_url: `${baseUrl}/cart`,
+      metadata: {
+        orderId: "placeholder",
+      },
+    })
 
-  return NextResponse.json({ url: session.url })
+    return NextResponse.json({ url: session.url })
+  } catch (error) {
+    console.error("Failed to create Stripe checkout session", error)
+    return NextResponse.json(
+      { error: "Unable to start checkout. Please try again." },
+      { status: 500 }
+    )
+  }
 }

@@ -25,21 +25,27 @@ export function LoginForm() {
       return
     }
 
-    const response = await fetch("/api/admin/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password })
-    })
+    try {
+      const response = await fetch("/api/admin/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password })
+      })
 
-    if (!response.ok) {
-      const payload = await response.json().catch(() => ({ error: "Unable to sign in." }))
-      setError(payload.error ?? "Unable to sign in.")
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({ error: "Unable to sign in." }))
+        setError(payload.error ?? "Unable to sign in.")
+        setIsSubmitting(false)
+        return
+      }
+
+      router.replace(redirectTo)
+      router.refresh()
+    } catch (requestError) {
+      console.error("Admin login request failed", requestError)
+      setError("We couldn't reach the login service. Please try again.")
       setIsSubmitting(false)
-      return
     }
-
-    router.replace(redirectTo)
-    router.refresh()
   }
 
   return (

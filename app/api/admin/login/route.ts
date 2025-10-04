@@ -25,36 +25,44 @@ export async function POST(request: Request) {
     )
   }
 
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email,
-    password
-  })
+  try {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password
+    })
 
-  if (error || !data.session) {
+    if (error || !data.session) {
+      return NextResponse.json(
+        { error: "Invalid email or password." },
+        { status: 401 }
+      )
+    }
+
+    const response = NextResponse.json({ success: true })
+    const secure = process.env.NODE_ENV === "production"
+
+    response.cookies.set("sb-access-token", data.session.access_token, {
+      httpOnly: true,
+      sameSite: "lax",
+      secure,
+      path: "/",
+      maxAge: data.session.expires_in ?? ONE_HOUR
+    })
+
+    response.cookies.set("sb-refresh-token", data.session.refresh_token, {
+      httpOnly: true,
+      sameSite: "lax",
+      secure,
+      path: "/",
+      maxAge: THIRTY_DAYS
+    })
+
+    return response
+  } catch (signInError) {
+    console.error("Failed to complete Supabase admin sign-in", signInError)
     return NextResponse.json(
-      { error: "Invalid email or password." },
-      { status: 401 }
+      { error: "Unable to sign in right now. Please try again." },
+      { status: 500 }
     )
   }
-
-  const response = NextResponse.json({ success: true })
-  const secure = process.env.NODE_ENV === "production"
-
-  response.cookies.set("sb-access-token", data.session.access_token, {
-    httpOnly: true,
-    sameSite: "lax",
-    secure,
-    path: "/",
-    maxAge: data.session.expires_in ?? ONE_HOUR
-  })
-
-  response.cookies.set("sb-refresh-token", data.session.refresh_token, {
-    httpOnly: true,
-    sameSite: "lax",
-    secure,
-    path: "/",
-    maxAge: THIRTY_DAYS
-  })
-
-  return response
 }
