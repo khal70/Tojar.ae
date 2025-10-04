@@ -1,10 +1,11 @@
 import type { Metadata } from "next"
 import type { ReactNode } from "react"
+import type { User } from "@supabase/supabase-js"
 import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
 import { createClient } from "@supabase/supabase-js"
 
-import AdminSidebar from "@/components/admin/Sidebar"
+import AdminShell from "@/components/admin/AdminShell"
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -21,7 +22,7 @@ const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRoleKey, {
 
 const loginRedirect = "/auth/login?redirectTo=%2Fadmin%2Fdashboard"
 
-async function requireAdminSession() {
+async function requireAdminSession(): Promise<User> {
   const cookieStore = cookies()
   const accessToken = cookieStore.get("sb-access-token")?.value
 
@@ -34,6 +35,8 @@ async function requireAdminSession() {
   if (error || !data?.user) {
     redirect(loginRedirect)
   }
+
+  return data.user
 }
 
 export const metadata: Metadata = {
@@ -49,24 +52,17 @@ export default async function AdminLayout({
 }: {
   children: ReactNode
 }) {
-  await requireAdminSession()
+  const user = await requireAdminSession()
 
-  return (
-    <div className="min-h-screen bg-gray-900/5 text-gray-900">
-      <a
-        href="#admin-content"
-        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:rounded-md focus:bg-white focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-gray-900 focus:shadow"
-      >
-        Skip to content
-      </a>
+  const displayName = [
+    typeof user?.user_metadata?.full_name === "string" ? user.user_metadata.full_name : null,
+    typeof user?.user_metadata?.name === "string" ? user.user_metadata.name : null
+  ].find(Boolean)
 
-      <div className="flex min-h-screen">
-        <AdminSidebar />
+  const adminUser = {
+    name: displayName ?? null,
+    email: user?.email ?? null
+  }
 
-        <main id="admin-content" className="flex-1 overflow-y-auto bg-gray-50">
-          <div className="mx-auto w-full max-w-6xl px-6 py-8 lg:px-10">{children}</div>
-        </main>
-      </div>
-    </div>
-  )
+  return <AdminShell user={adminUser}>{children}</AdminShell>
 }
