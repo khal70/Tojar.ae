@@ -7,7 +7,7 @@ export default function AdminPageSkeleton() {
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {[...Array(4).keys()].map((key) => (
+        {Array.from({ length: 4 }, (_, index) => index).map((key) => (
           <div key={key} className="h-24 animate-pulse rounded-lg bg-white shadow-sm ring-1 ring-gray-100" />
         ))}
       </div>

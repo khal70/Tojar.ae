@@ -3,22 +3,8 @@ import type { ReactNode } from "react"
 import type { User } from "@supabase/supabase-js"
 import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
-import { createClient } from "@supabase/supabase-js"
-
 import AdminShell from "@/components/admin/AdminShell"
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-
-if (!supabaseUrl || !supabaseServiceRoleKey) {
-  throw new Error(
-    "Supabase server credentials are required to protect the admin layout."
-  )
-}
-
-const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRoleKey, {
-  auth: { persistSession: false }
-})
+import { getSupabaseServerClient } from "@/lib/supabase-server"
 
 const loginRedirect = "/auth/login?redirectTo=%2Fadmin%2Fdashboard"
 
@@ -30,9 +16,19 @@ async function requireAdminSession(): Promise<User> {
     redirect(loginRedirect)
   }
 
-  const { data, error } = await supabaseAdmin.auth.getUser(accessToken)
+  const supabase = getSupabaseServerClient()
+
+  if (!supabase) {
+    console.error("Supabase client could not be initialised. Redirecting to login.")
+    redirect(loginRedirect)
+  }
+
+  const { data, error } = await supabase.auth.getUser(accessToken)
 
   if (error || !data?.user) {
+    if (error) {
+      console.warn("Failed to validate Supabase access token", error.message)
+    }
     redirect(loginRedirect)
   }
 

@@ -1,4 +1,4 @@
-import { createClient } from "@supabase/supabase-js"
+import { getSupabaseServerClient } from "@/lib/supabase-server"
 
 export type AdminOrder = {
   id: string
@@ -50,29 +50,8 @@ export type AdminFaq = {
   answer: string
 }
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-
-let cachedClient: ReturnType<typeof createClient> | null | undefined
-
 function getSupabaseClient() {
-  if (cachedClient !== undefined) {
-    return cachedClient
-  }
-
-  const key = serviceRoleKey || anonKey
-
-  if (!supabaseUrl || !key) {
-    cachedClient = null
-    return cachedClient
-  }
-
-  cachedClient = createClient(supabaseUrl, key, {
-    auth: { persistSession: false }
-  })
-
-  return cachedClient
+  return getSupabaseServerClient()
 }
 
 function parseNumber(value: unknown): number | null {
@@ -167,19 +146,24 @@ export async function fetchAdminCustomers(): Promise<AdminCustomer[]> {
 
   if (!error && data) {
     return data.map((row) => {
-      const ordersCount = parseNumber(row.orders_count) ?? parseNumber(row.total_orders) ?? 0
+      const record = row as Record<string, unknown>
+      const ordersCount =
+        parseNumber(record["orders_count"]) ?? parseNumber(record["total_orders"]) ?? 0
       const lifetimeValue =
-        parseNumber(row.lifetime_value) ?? parseNumber(row.total_spent) ?? 0
+        parseNumber(record["lifetime_value"]) ?? parseNumber(record["total_spent"]) ?? 0
 
       return {
-        id: ensureString(row.id, ensureString(row.email, "—")),
-        name: ensureString(row.name || row.full_name || row.email, "Unknown customer"),
-        email: ensureString(row.email, "—"),
+        id: ensureString(record["id"], ensureString(record["email"], "—")),
+        name: ensureString(
+          record["name"] || record["full_name"] || record["email"],
+          "Unknown customer"
+        ),
+        email: ensureString(record["email"], "—"),
         ordersCount: ordersCount ?? 0,
         lifetimeValue: lifetimeValue ?? 0,
         lastOrderAt:
-          typeof row.last_order_at === "string" && row.last_order_at.length > 0
-            ? row.last_order_at
+          typeof record["last_order_at"] === "string" && record["last_order_at"].length > 0
+            ? (record["last_order_at"] as string)
             : null,
       }
     })

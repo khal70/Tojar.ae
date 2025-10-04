@@ -1,4 +1,4 @@
-import { stripe } from "./stripe"
+import { getStripeClient } from "./stripe"
 
 export type StripeWebhookSummary = {
   id: string
@@ -47,13 +47,21 @@ const FALLBACK_SETTINGS: StripeSettings = {
 }
 
 export async function fetchStripeSettings(): Promise<StripeSettings> {
+  const stripe = getStripeClient()
+
+  if (!stripe) {
+    return FALLBACK_SETTINGS
+  }
+
   try {
     const [account, webhookEndpoints] = await Promise.all([
       stripe.accounts.retrieve(),
       stripe.webhookEndpoints.list({ limit: 10 }),
     ])
 
-    const captureMethod = account.settings?.card_payments?.capture_method ?? null
+    const cardPaymentsSettings =
+      account.settings?.card_payments as { capture_method?: string } | undefined
+    const captureMethod = cardPaymentsSettings?.capture_method ?? null
     const defaultCurrency = account.default_currency ?? null
     const accountName =
       account.settings?.dashboard?.display_name ?? account.business_profile?.name ?? account.id ?? null
@@ -80,8 +88,8 @@ export async function fetchStripeSettings(): Promise<StripeSettings> {
           bankName: bankAccount.bank_name ?? null,
           last4: bankAccount.last4 ?? null,
           status: bankAccount.status ?? null,
-          interval: account.settings?.payouts?.schedule?.interval ?? null,
-          delayDays: account.settings?.payouts?.schedule?.delay_days ?? null,
+          interval: (account.settings?.payouts as any)?.schedule?.interval ?? null,
+          delayDays: (account.settings?.payouts as any)?.schedule?.delay_days ?? null,
           currency: bankAccount.currency ?? account.default_currency ?? null,
         }
       }
