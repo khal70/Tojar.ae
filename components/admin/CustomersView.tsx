@@ -1,4 +1,5 @@
 import Card from "@/components/ui/Card"
+import SupabaseConfigAlert from "@/components/admin/SupabaseConfigAlert"
 import { fetchAdminCustomers } from "@/lib/admin-data"
 import { formatCurrency } from "@/lib/formatters"
 
@@ -44,6 +45,8 @@ export default async function CustomersView() {
         <h1 className="text-3xl font-semibold">Customers</h1>
         <p className="text-sm text-gray-600">Review shopper activity, engagement, and lifetime value at a glance.</p>
       </header>
+
+      <SupabaseConfigAlert message="Customer insights populate once Supabase environment variables are configured." />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {summary.map((item) => (

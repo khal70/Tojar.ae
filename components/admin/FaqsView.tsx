@@ -1,4 +1,5 @@
 import Card from "@/components/ui/Card"
+import SupabaseConfigAlert from "@/components/admin/SupabaseConfigAlert"
 import { fetchAdminFaqs } from "@/lib/admin-data"
 
 export default async function FaqsView() {
@@ -10,6 +11,8 @@ export default async function FaqsView() {
         <h1 className="text-3xl font-semibold">FAQs</h1>
         <p className="text-sm text-gray-600">Frequently asked questions shown on the storefront help centre.</p>
       </header>
+
+      <SupabaseConfigAlert message="FAQs are fetched from Supabase once environment variables are set." />
 
       <div className="space-y-4">
         {faqs.length > 0 ? (

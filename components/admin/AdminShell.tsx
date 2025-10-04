@@ -1,7 +1,7 @@
 "use client"
 
 import type { ReactNode } from "react"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 
 import AdminBreadcrumbs from "@/components/admin/AdminBreadcrumbs"
 import AdminNavbar from "@/components/admin/Navbar"
@@ -15,8 +15,33 @@ type AdminShellProps = {
   }
 }
 
+const SIDEBAR_STORAGE_KEY = "tojar-admin-sidebar"
+
 export default function AdminShell({ children, user }: AdminShellProps) {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return
+    }
+
+    const storedPreference = window.localStorage.getItem(SIDEBAR_STORAGE_KEY)
+
+    if (storedPreference === "collapsed") {
+      setIsSidebarCollapsed(true)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return
+    }
+
+    window.localStorage.setItem(
+      SIDEBAR_STORAGE_KEY,
+      isSidebarCollapsed ? "collapsed" : "expanded"
+    )
+  }, [isSidebarCollapsed])
 
   return (
     <div className="min-h-screen bg-gray-900/5 text-gray-900">

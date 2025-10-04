@@ -1,6 +1,7 @@
 import Link from "next/link"
 
 import Card from "@/components/ui/Card"
+import SupabaseConfigAlert from "@/components/admin/SupabaseConfigAlert"
 import { fetchAdminOrders } from "@/lib/admin-data"
 import { formatCurrency } from "@/lib/formatters"
 
@@ -94,6 +95,8 @@ export default async function OrdersView() {
           Track order momentum, payment state, and fulfilment progress across the marketplace.
         </p>
       </header>
+
+      <SupabaseConfigAlert message="Orders will sync automatically once Supabase credentials are configured." />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {orderStats.map((stat) => (

@@ -21,8 +21,54 @@ const labelMap: Record<string, string> = {
   products: "Products"
 }
 
-function getLabel(segment: string) {
-  return labelMap[segment] ?? segment.replace(/-/g, " ")
+function titleCase(value: string) {
+  return value
+    .split(" ")
+    .filter(Boolean)
+    .map((part) => part[0]?.toUpperCase() + part.slice(1))
+    .join(" ")
+}
+
+function isNumericSegment(segment: string) {
+  return /^\d+$/.test(segment)
+}
+
+function isLikelyIdentifier(segment: string) {
+  const cleaned = segment.replace(/-/g, "")
+  if (cleaned.length < 6) {
+    return false
+  }
+
+  return /^[0-9a-f]+$/i.test(cleaned)
+}
+
+function formatIdentifier(segment: string) {
+  const cleaned = segment.replace(/-/g, "")
+  if (cleaned.length <= 8) {
+    return cleaned.toUpperCase()
+  }
+
+  return `${cleaned.slice(0, 8).toUpperCase()}…`
+}
+
+function getLabel(segment: string, index: number, segments: string[]) {
+  if (labelMap[segment]) {
+    return labelMap[segment]
+  }
+
+  if (isNumericSegment(segment)) {
+    return `#${segment}`
+  }
+
+  if (isLikelyIdentifier(segment)) {
+    return formatIdentifier(segment)
+  }
+
+  if (segment === "page" && index === segments.length - 1) {
+    return "Page"
+  }
+
+  return titleCase(segment.replace(/-/g, " "))
 }
 
 export default function AdminBreadcrumbs() {
@@ -31,7 +77,7 @@ export default function AdminBreadcrumbs() {
 
   const crumbs = segments.map((segment, index) => {
     const href = `/${segments.slice(0, index + 1).join("/")}`
-    return { label: getLabel(segment), href }
+    return { label: getLabel(segment, index, segments), href }
   })
 
   return (

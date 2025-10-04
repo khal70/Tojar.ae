@@ -1,4 +1,5 @@
 import Card from "@/components/ui/Card"
+import SupabaseConfigAlert from "@/components/admin/SupabaseConfigAlert"
 import { fetchAdminBanners } from "@/lib/admin-data"
 
 const statusStyles: Record<string, string> = {
@@ -34,6 +35,8 @@ export default async function BannersView() {
           Manage hero banners that promote offers and seasonal campaigns across the storefront.
         </p>
       </header>
+
+      <SupabaseConfigAlert message="Banner data appears once the Supabase tables are connected." />
 
       <Card>
         {banners.length > 0 ? (

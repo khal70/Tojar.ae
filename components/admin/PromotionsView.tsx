@@ -1,4 +1,5 @@
 import Card from "@/components/ui/Card"
+import SupabaseConfigAlert from "@/components/admin/SupabaseConfigAlert"
 import { fetchAdminPromotions } from "@/lib/admin-data"
 import { formatCurrency } from "@/lib/formatters"
 
@@ -79,6 +80,8 @@ export default async function PromotionsView() {
           Manage incentive campaigns, redemption performance, and automation triggers for customer segments.
         </p>
       </header>
+
+      <SupabaseConfigAlert message="Promotion campaigns will surface once Supabase credentials are provided." />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {metrics.map((metric) => (

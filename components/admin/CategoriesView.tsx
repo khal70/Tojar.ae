@@ -1,4 +1,5 @@
 import Card from "@/components/ui/Card"
+import SupabaseConfigAlert from "@/components/admin/SupabaseConfigAlert"
 import { fetchAdminCategories } from "@/lib/admin-data"
 
 function formatDate(value: string | null) {
@@ -22,6 +23,8 @@ export default async function CategoriesView() {
         <h1 className="text-3xl font-semibold">Categories</h1>
         <p className="text-sm text-gray-600">Organise the marketplace catalogue into intuitive browsing groups.</p>
       </header>
+
+      <SupabaseConfigAlert message="Connect Supabase to populate real category data." />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <Card className="space-y-2">
