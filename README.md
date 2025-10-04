@@ -82,7 +82,7 @@ npm run test:unit
 
 ### Playwright
 ```bash
-npx playwright install
+npm run test:e2e:setup # installs browsers + system deps (first run)
 npm run test:e2e
 ```
 

@@ -11,6 +11,7 @@
     "test": "npm run test:unit",
     "test:unit": "vitest run",
     "test:e2e": "playwright test",
+    "test:e2e:setup": "playwright install --with-deps",
     "clean:next": "node scripts/clean-next.mjs",
     "package:standalone": "node scripts/create-standalone-package.mjs",
     "deploy:standalone": "node scripts/deploy-standalone.mjs"
